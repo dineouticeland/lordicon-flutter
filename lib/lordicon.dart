@@ -24,14 +24,21 @@ class IconController extends ChangeNotifier {
   LottieComposition? _composition;
   String? _state;
   Marker? _marker;
+  bool _repeat = false;
   late int _direction;
 
   /// Creates a IconController instance that loads a Lottie composition from an asset.
-  IconController.assets(String assetName, {String? state, int? direction}) {
+  IconController.assets(
+    String assetName, {
+    String? state,
+    int? direction,
+    bool repeat = false,
+  }) {
     _controller = null;
     _composition = null;
     _marker = null;
     _state = state;
+    _repeat = repeat;
     _direction = direction ?? 1;
 
     AssetProvider(assetName).load().then((value) => {
@@ -41,11 +48,17 @@ class IconController extends ChangeNotifier {
   }
 
   /// Creates a IconController instance that loads a Lottie composition from network.
-  IconController.network(String url, {String? state, int? direction}) {
+  IconController.network(
+    String url, {
+    String? state,
+    int? direction,
+    bool repeat = false,
+  }) {
     _controller = null;
     _composition = null;
     _marker = null;
     _state = state;
+    _repeat = repeat;
     _direction = direction ?? 1;
 
     NetworkProvider(url)
@@ -121,7 +134,11 @@ class IconController extends ChangeNotifier {
 
     _controller!.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        _notifyStatusListeners(ControllerStatus.completed);
+        if (_repeat && _controller != null) {
+          _controller!.repeat();
+        } else {
+          _notifyStatusListeners(ControllerStatus.completed);
+        }
       }
     });
 
