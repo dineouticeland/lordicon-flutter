@@ -36,6 +36,7 @@ class AssetProvider extends LottieProvider {
   });
 
   final String assetName;
+
   String get keyName =>
       package == null ? assetName : 'packages/$package/$assetName';
 
@@ -44,18 +45,20 @@ class AssetProvider extends LottieProvider {
   final String? package;
 
   @override
-  Future<LottieComposition> load() {
+  Future<LottieComposition> load({ BuildContext? context }) {
     return sharedLottieCache.putIfAbsent(this, () async {
       final chosenBundle = bundle ?? rootBundle;
 
       var data = handleJsonData(await chosenBundle.loadString(keyName));
       final iconData = Uint8List.fromList(utf8.encode(data));
 
-      var composition = await LottieComposition.fromBytes(iconData,
-          name: p.url.basenameWithoutExtension(keyName),
-          imageProviderFactory: imageProviderFactory);
-
-      return composition;
+      return await LottieComposition.fromBytes(
+        iconData,
+        decoder: (bytes) => LottieComposition.decodeZip(
+          bytes,
+          imageProviderFactory: imageProviderFactory,
+        ),
+      );
     });
   }
 
@@ -82,19 +85,20 @@ class NetworkProvider extends LottieProvider {
   final Map<String, String>? headers;
 
   @override
-  Future<LottieComposition> load() {
+  Future<LottieComposition> load({ BuildContext? context }) {
     return sharedLottieCache.putIfAbsent(this, () async {
       var resolved = Uri.base.resolve(url);
       var bytes = await network.loadHttp(resolved, headers: headers);
       var data = handleJsonData(utf8.decode(bytes));
-
       final iconData = Uint8List.fromList(utf8.encode(data));
 
-      var composition = await LottieComposition.fromBytes(iconData,
-          name: p.url.basenameWithoutExtension(url),
-          imageProviderFactory: imageProviderFactory);
-
-      return composition;
+      return await LottieComposition.fromBytes(
+        iconData,
+        decoder: (bytes) => LottieComposition.decodeZip(
+          bytes,
+          imageProviderFactory: imageProviderFactory,
+        ),
+      );
     });
   }
 
